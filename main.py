@@ -35,7 +35,7 @@ users = {
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello, FastAPI!"}
+    return {"message": "Hello, from CI/CD!"}
 
 
 # Get ALL users
