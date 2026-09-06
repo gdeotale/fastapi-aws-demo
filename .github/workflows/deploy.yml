@@ -56,9 +56,20 @@ jobs:
           docker push \
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
 
-      - name: Deploy to ECS
+      - name: Deploy to ECS Express Mode
         run: |
-          aws ecs update-service \
-          --cluster ${{ env.ECS_CLUSTER }} \
-          --service ${{ env.ECS_SERVICE }} \
-          --force-new-deployment
+          IMAGE_DIGEST=$(aws ecr describe-images \
+          --repository-name ${{ env.ECR_REPOSITORY }} \
+          --image-ids imageTag=${{ github.sha }} \
+          --query 'imageDetails[0].imageDigest' \
+          --output text)
+
+          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}@${IMAGE_DIGEST}"
+
+          echo "Deploying image: ${IMAGE_URI}"
+
+          aws ecs update-express-gateway-service \
+            --service-arn arn:aws:ecs:ap-south-1:933605931641:service/default/fastapi-app-7bb8 \
+            --primary-container "{\"image\":\"${IMAGE_URI}\"}" \
+            --monitor-resources DEPLOYMENT \
+            --monitor-mode TEXT-ONLY
